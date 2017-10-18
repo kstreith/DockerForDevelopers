@@ -330,12 +330,33 @@ We could now run that new image as a new container, etc. We could continue creat
 
 You need Docker for Windows installed and if using Linux containers you will need Shared Drives enabled, see the top of this document for details. Also, you will need to ensure the "Container Development Tools" were installed, check in Visual Studio installer under Individual Components.
 
+### Add Docker to existing application
 
-## .NET Framework apps in a container
+Visual Studio 2017 will help you add Docker support to an existing app. Open the SampleWebFormsApp\SampleWebFormsApp.sln in VS 2017.
+
+This is a Classic ASP.NET WebForms application. It requires Windows and IIS. Go ahead and run the project and then click on "About" in the navigation. You'll notice in the browser the url ends in About.aspx. This is in fact a classic web forms application.
+
+Now, let's run this in a Docker container. That container will need to run Windows, it'll need to have the full .NET Framework and it'll need to have IIS installed. Let's see if there is any easy way to do that.
+
+Right-click on the SampleWebFormsApp project in the solution. Expand the "Add" menu on the right-click menu and click the "Add Docker Support" button. Visual Studio will add a new project to your solution called docker-compose. It also added a Dockerfile to your SampleWebFormsApp project. If you have docker-compose project selected, the Run button will be "Docker". If you have SampleWebFormsApp selected, the Run button will be your browser.
+
+Before you try and run the application, right-click on Docker in the task bar and select "Switch to Windows containers...". For this example you will be running a Windows container. If you forget this step, Visual Studio will error indicating it can't run a Windows container on Linux.
+
+Select the docker-compose project and then click the run button which should say "Docker". VS 2017 will now work with Docker to build a new image and then run that image as a container. Since this is a classic ASP.NET WebForms app, it requires a Windows container and it requires a Microsoft image that bundles the full .NET Framework and IIS. Visual Studio handled all of those details for you.
+
+Now, what if you need to edit files?
+
+Go ahead, edit the Default.aspx, and then refresh the page in your browser. You'll see the change happens immediately. That's because Visual Studio ran this Docker image with volume mapping (e.g. the -v switch we used with our locust example above).
+
+What if you want to debug the application?
+
+Go ahead, put a breakpoint in the code behind for Default.aspx and refresh the page in the browser. The breakpoint just works. That's because Visual Studio volume mounted the remote debugging binary into your container and then wired up the Visual Studio debugging to remote debug the instance running inside the container. Details you don't need to care about, VS just took care of it.
+
+Go ahead and try the same thing with the SampleAspNetCoreOnDotNetCore\SampleAspNetCoreOnDotNetCore.sln. When you add Docker support it will ask if you want Linux or Windows support. You can pick either, the project is supported on either OS since it uses .NET Core which is cross-platform instead of .NET Framework which is Windows only. Notice that editing a file and refreshing the browser still works. Also notice that setting a breakpoint continues to work, even if running in a Linux container. Again, Visual Studio setup and configured remote debugging correctly.
 
 ## SQL Server, Windows Containers
 
-Windows Containers not available on loopback (e.g. localhost)
+Windows Containers are not available on loopback (e.g. localhost)
    - Waiting on Windows OS Fix https://github.com/docker/for-win/issues/458
    - Each time container is stopped/started, it will get a new ip address, run command to determine what new ip address is:
    ```

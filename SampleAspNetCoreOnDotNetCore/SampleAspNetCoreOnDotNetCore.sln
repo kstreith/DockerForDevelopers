@@ -3,7 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.26730.16
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SampleAspNetCoreOnDotNetCore", "SampleAspNetCoreOnDotNetCore\SampleAspNetCoreOnDotNetCore.csproj", "{AC08DA9E-8AB7-4166-81EA-FFFECB129010}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SampleAspNetCoreOnDotNetCore", "SampleAspNetCoreOnDotNetCore\SampleAspNetCoreOnDotNetCore.csproj", "{AC08DA9E-8AB7-4166-81EA-FFFECB129010}"
+EndProject
+Project("{E53339B2-1760-4266-BCC7-CA923CBCF16C}") = "docker-compose", "docker-compose.dcproj", "{C794EAB9-4581-40B1-B612-72D36122BAE0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,10 @@ Global
 		{AC08DA9E-8AB7-4166-81EA-FFFECB129010}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AC08DA9E-8AB7-4166-81EA-FFFECB129010}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AC08DA9E-8AB7-4166-81EA-FFFECB129010}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C794EAB9-4581-40B1-B612-72D36122BAE0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C794EAB9-4581-40B1-B612-72D36122BAE0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C794EAB9-4581-40B1-B612-72D36122BAE0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C794EAB9-4581-40B1-B612-72D36122BAE0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
