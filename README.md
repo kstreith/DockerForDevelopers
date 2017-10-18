@@ -354,6 +354,48 @@ Go ahead, put a breakpoint in the code behind for Default.aspx and refresh the p
 
 Go ahead and try the same thing with the SampleAspNetCoreOnDotNetCore\SampleAspNetCoreOnDotNetCore.sln. When you add Docker support it will ask if you want Linux or Windows support. You can pick either, the project is supported on either OS since it uses .NET Core which is cross-platform instead of .NET Framework which is Windows only. Notice that editing a file and refreshing the browser still works. Also notice that setting a breakpoint continues to work, even if running in a Linux container. Again, Visual Studio setup and configured remote debugging correctly.
 
+## Azure CLI & Sharing Images
+
+You can share images on Docker Hub using the _"docker push"_ command. They provide free hosting if the images are made publicly available. They are also provide private hosting for 1 private repository. There are other providers of private registries as well, Google, AWS, Azure. I'm going to demo both running the Azure CLI from a Docker image along with creating a Docker container registry in Azure (it costs less than ~10 a month).
+
+First, let's run the Azure CLI
+
+```
+docker run -it azuresdk/azure-cli-python:latest
+```
+
+This makes it interactive so we can type commands in like a REPL. Type exit and press <Enter> to close the session.
+
+If you just enter
+```
+az --help
+```
+It will list all the sub-commands available. For example, to learn more about the container registry:
+```
+az acr --help
+```
+Or
+```
+az acr create --help
+```
+
+So, let's create a container registry with three commands:
+
+Login first and follow the instructions. You will login via the web browser and use whatever account is associated with your Azure subscription.
+```
+az login
+```
+Create a resource group first, this makes it easier to delete later and easier to manage in the portal
+```
+az group create --name trinugContainerRegistryGroup --location eastus
+```
+And finally, create the actual container registry:
+```
+az acr create --name trinugContainerRegistry00 --resource-group trinugContainerRegistryGroup --sku Basic
+```
+
+https://docs.microsoft.com/en-us/azure/container-registry/container-registry-get-started-azure-cli
+
 ## SQL Server, Windows Containers
 
 Windows Containers are not available on loopback (e.g. localhost)
