@@ -256,106 +256,106 @@ ERRO[0000] error waiting for container: context canceled
 
 That's because it's still running and is already bound to port 8089 on your host machine. So, use _"docker ps"_ and then _"docker stop [container id or container name]"_ to stop the container first before running the same command. You could run two instances side-by-side if you simply used a different port on your host, but I'm not really sure why you need that in this specific case.
 
-## Run SQL Server, Linux Container
+## Run SQL Server
 
-docker run -e "ACCEPT_EULA=Y" -e "MSSQL_SA_PASSWORD=TriNUG!R0cks" -p 1401:1433 --name sqldev -d microsoft/mssql-server-linux:2017-latest
+Let's install SQL Server..... and answer a bunch of questions, probably do answer one or more wrong and it will take quite  awhile.
 
-Open SQL Server Management Studio and connect
-  ServerName: 127.0.01, 1500
+Or let's run SQL Server inside a container. Execute the following command:
+
+```
+docker run -e "ACCEPT_EULA=Y" -e "MSSQL_SA_PASSWORD=TriNUG!R0cks" -p 1500:1433 --name sqldev -d microsoft/mssql-server-linux:2017-latest
+```
+
+That's it, sql server is now running in a container as is available on localhost at port 1500. Let's examine the new arguments, we used. The -e argument let's you set environment variables inside the container. The Microsoft provided image has two required environment variables, ACCEPT_EULA and MSSQL_SA_PASSWORD, they are pretty self explanatory. The --name argument is if we want to give the container a name instead of having one generated for us, that is optional, but I find it easier for the later commands we will execute. The -d specifies that we can run the container as a daemon, e.g. a background process. You can see it running using _"docker ps"_
+
+Now, I ran SQL Server as a Linux container. There is also a Windows container version. I choose the Linux container for two primary reasons. The first is the Linux image is much smaller making it much faster to download (~1 GB instead of ~11GB). The second reason is that Linux containers will be accessible at localhost:[custom port]. Windows containers currently cannot be bound to locahost, they end up with a new unique local ip address every time the container is run. You then typically have to query for the unique ip that Docker allocated to that container. This makes it much harder to demo and use. The Windows OS team is working on a fix for their networking stack, but currently is still a pain. SQL Server on Linux is production quality and was officially released back in September 2017. The containerized version(https://hub.docker.com/r/microsoft/mssql-server-linux/) is marked specifically as Development only by Microsoft.
+
+You could connect to this with any number of tools, our you can download and install just the SQL Server Management Studio IDE. The download is free and does NOT install SQL Server, just the graphical management tools. See https://docs.microsoft.com/en-us/sql/ssms/download-sql-server-management-studio-ssms
+
+After downloading and installing SQL Server Management Studio, open SQL Server Management Studio and connect with the following details:
+```
+  ServerName: 127.0.0.1, 1500
   Authentication: SQL Server Authentication
   Login: sa
-  Password: [enter your password]
+  Password: [enter your password, provided above as TriNUG!R0cks]
+```
+The , between 127.0.0.1 and the 1500 for the ServerName is important, it must be a comma, not a colon.
 
-Create new query, excute school-db.sql, Refresh databases to see School database.
+We have a new empty database in SQL Server Management Studio. Drag and drop the school-db.sql script onto SQL Server Management Studio. Execute the script. Refresh the Databases node in Studio using right-click to see School database. Expand the School node and then the Tables node to see the tables in the database. Right-click on a Table to execute a query to see all the data in an given table.
 
-Stop SQL Server
-  docker stop sqldev
+You could now connect from another tool, like Visual Studo Code, maybe you don't need to install SQL Server Management Studio. Install the mssql extension for Visual Studio Code.
 
-Refresh in SQL Server Management Studio, connection is broken because it's no longer running.
+You can stop the SQL Server if you want using _"docker stop [container id or container name]"_. In our case:
+```
+docker stop sqldev
+```
 
-Start SQL server
-  docker start sqldev
+Now if you try and connect it won't be available. You can restart the container using _"docker start [container id or container name]"_. In our case:
+```
+docker start sqldev
+```
 
-Connect again in SQL Server Management Studio, data is still there. The run command creates a new container from the base image (e.g. no data in database). The stop and start simply effect a container instance.
+You'll notice if stop it and then restart it, the data is still there when you query for it. Remember, the run command creates a new container from a base image (hence why it starts with no database). The newly created container has it's own file system that it does maintain across stops and starts. If you were to delete the container with _"docker rm [container id or container name]"_ then that data inside the container would be gone. If you used docker run again you would end up with a brand-new container based on the original image, so back to no database again. Hence the reason I named this container when I created it, so it would easy to keep around, stop and start as needed.
 
-Stop and create a new image from that container
-  docker stop sqldev
-  docker commit sqldev schooldb:v1 
+Now, what if we are doing development and we want to version our data in our local development database? Docker does permit you to create a new image based upon an existing container. So, let's do that:
 
-Run the new image as a new container
-  docker run -p 1402:1433 --name schooldev -d schooldb:v1
+```
+docker stop sqldev
+docker commit sqldev schooldb:FirstRev 
+```
 
-Edit some data in a table
-Run another instance on another port from the v1 image
-  docker run -p 1403:1433 --name schooldev2 -d schooldb:v1
-Connect to second instance in SQL Management studio, notice the second instance has the v1 data.
-You could take any instance at any point stop it and commit it as another image, e.g. v2, etc. The tags can be any string, so feel free to use better descriptors than v1, v2.
+We stop the container first so that new filesystem writes aren't occurring. We then commit a given container as a new image. The full command is _"docker commit [container name] [image name]:[image tag]"_. The image tag allows us to have multiple images, each with a different tag name, e.g. different versions of the same image.
 
-Just run a command-line tool that would otherwise be hard to run
+Now, that we have a new image, let's create a container from that image and run it on a new port
+```
+docker run -p 1501:1433 --name schoolTest1 -d schooldb:FirstRev
+```
 
-------------------------
-Visual Studio 2017
-  Needs Docker for Windows installed
-  Needs shared drives enabled
-  Needs container development tools installed (check in VS installer under individual components)
+Now, edit some data in a table, maybe the Person table. Now, let's run another container based on that image on a new port.
+
+```
+docker run -p 1502:1433 --name schoolTest2 -d schooldb:FirstRev
+```
+
+Now, notice that the instance on port 1502, e.g. our last command, doesn't have the changes to the Person table. We could now take the edits we made on schoolTest1 and commit those as a new image:
+
+```
+docker stop schoolTest1
+docker commit schoolTest1 schooldb:EditedRev
+```
+
+We could now run that new image as a new container, etc. We could continue creating new images as we edit data in the database. You don't have to give each one a new port number, you would simply have to stop the running container first before starting a different container that shares the same port. But hopefully you are starting to see the possibilities for local development work. You can version your local development database using Docker on your machine even if no one else on your team is using Docker.
+
+## Visual Studio 2017 Support
+
+You need Docker for Windows installed and if using Linux containers you will need Shared Drives enabled, see the top of this document for details. Also, you will need to ensure the "Container Development Tools" were installed, check in Visual Studio installer under Individual Components.
 
 
+## .NET Framework apps in a container
 
-------------------------
-Azure CLI
-
--------------------------
+## SQL Server, Windows Containers
 
 Windows Containers not available on loopback (e.g. localhost)
-   Waiting on Windows OS Fix
-   https://github.com/docker/for-win/issues/458
-
-   docker inspect --format '{{ .NetworkSettings.Networks.nat.IPAddress }}' <container>    
-
-Run SQL Server, Windows Container
----------------------------------
-docker run -d -p 1433:1433 -e 'sa_password=yourStrong(!)Password' -e ACCEPT_EULA=Y --name win-sql-server microsoft/mssql-server-windows-express
-
-docker inspect --format '{{ .NetworkSettings.Networks.nat.IPAddress }}' win-sql-server
-
-Connect to [ipaddress]:1433 in SQL Management Studio
-sa
-using password you provided
-
-Run school.sql using sql server management studio
-
-docker stop win-sql-server
-docker start win-sql-server
-
-If restart the container, the ip address will change
-
-Commit changes as a new base image that can be used:
-  docker commit win-sql-server win-school-db
-
-docker run -d -p 1433:1433 --ip 172.22.98.149 --name school-db win-school-db
+   - Waiting on Windows OS Fix https://github.com/docker/for-win/issues/458
+   - Each time container is stopped/started, it will get a new ip address, run command to determine what new ip address is:
+   ```
+   docker inspect --format '{{ .NetworkSettings.Networks.nat.IPAddress }}' [container id or container name]
+   ```
 
 https://github.com/twright-msft/mssql-node-docker-demo-app
 
-Other Tools 
-------------
+## Other Tools 
 
-wrk
-----
-docker run --rm skandyla/wrk -t5 -c5 -d10  https://itsnull.com/
+If it's a command-line tool or a service that runs over a network port, you can run it in a Docker Container. Here are some sample images:
 
-Azure CLI
----------
-Demo that
+- Redis https://hub.docker.com/_/redis/
+- MongoDB https://hub.docker.com/_/mongo/
+- Cassandra https://hub.docker.com/_/cassandra/
+- Wordpress https://hub.docker.com/_/wordpress/
+- .NET Core https://hub.docker.com/r/microsoft/dotnet/
+- Java https://hub.docker.com/_/java/
+- Ruby https://hub.docker.com/_/ruby/
+- NodeJS https://hub.docker.com/_/node/
+- Azure CLI https://hub.docker.com/r/microsoft/azure-cli/
 
-Redis?? https://hub.docker.com/_/redis/
-MongoDB?? https://hub.docker.com/_/mongo/
-Jenkins?? https://jenkins.io/doc/book/installing/#docker
-Cassandra?? https://hub.docker.com/_/cassandra/
-Selenium?? https://github.com/SeleniumHQ/docker-selenium
-
-Unit testing .NET Core?? https://devblog.xero.com/getting-started-with-running-unit-tests-in-net-core-with-xunit-and-docker-e92915e4075c
-
-Links
-------
-
-https://medium.com/travis-on-docker/why-and-how-to-use-docker-for-development-a156c1de3b24
+No need to install any of the above directly on your machine if you don't want to, just use a Docker image to create yourself a container.
